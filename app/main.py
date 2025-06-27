@@ -5,4 +5,4 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"Hello": "From the cloud!777"}
+    return {"Hello": "From the 77"}
