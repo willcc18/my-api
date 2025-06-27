@@ -5,37 +5,21 @@ ENV PYTHONUNBUFFERED=1
 
 RUN apt-get -y update \
     && apt-get -y upgrade \
-    && apt-get install -y curl build-essential \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 10000 -ms /bin/bash runner
 
-# Crear usuario sin privilegios
-RUN useradd --uid 10000 -ms /bin/bash runner
-
-# Crear carpeta de trabajo
 WORKDIR /home/runner/app
 
-# Copiar archivos antes de cambiar a USER
-COPY pyproject.toml poetry.lock* ./
+COPY ./  ./
 
-# Instalar Poetry y dependencias como root
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir poetry \
-    && poetry config virtualenvs.create false \
-    && poetry install --only main
-
-# Copiar el resto del código
-COPY . .
-RUN chown -R runner:runner /home/runner
-
-
-
-# Cambiar a usuario no root
 USER 10000
 ENV PATH="${PATH}:/home/runner/.local/bin"
+
+RUN pip install --no-cache-dir poetry==1.8.5 \
+    && poetry install --only main
 
 EXPOSE 8000
 
 ENTRYPOINT [ "poetry", "run" ]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-#CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+CMD [ "sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port $PORT" ]
